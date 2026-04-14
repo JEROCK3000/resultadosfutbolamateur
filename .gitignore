@@ -4,3 +4,4 @@ public/assets/img/uploads/
 .DS_Store
 *.DS_Store
 Thumbs.db
+deploy.sh
