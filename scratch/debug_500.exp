@@ -1,0 +1,22 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Crear un archivo de información de PHP para probar el motor
+send "echo '<?php phpinfo();' > /home/solintee/futbolborja.solinteec.com/public/info.php\r"
+expect "#"
+send "chown solintee:solintee /home/solintee/futbolborja.solinteec.com/public/info.php\r"
+expect "#"
+
+# 2. Revisar si el .htaccess de la raíz está causando conflicto (Desactivándolo temporalmente)
+send "mv /home/solintee/futbolborja.solinteec.com/.htaccess /home/solintee/futbolborja.solinteec.com/.htaccess.disabled\r"
+expect "#"
+
+send "exit\r"
+expect eof

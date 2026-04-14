@@ -1,0 +1,25 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Verificar si existe el .env (es vital)
+send "ls -la /home/solintee/futbolborja.solinteec.com/.env\r"
+expect "#"
+
+# 2. Revisar el LOG de errores del subdominio en CWP
+# Por lo general en CWP están en /home/USUARIO/logs/
+send "tail -n 30 /home/solintee/logs/futbolborja.solinteec.com.error.log\r"
+expect "#"
+
+# 3. Si no está ahí, buscar en el log general de Apache
+send "tail -n 30 /usr/local/apache/logs/error_log | grep futbolborja\r"
+expect "#"
+
+send "exit\r"
+expect eof

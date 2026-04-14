@@ -35,8 +35,8 @@ class Router
         $requestUri    = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
         // Eliminar el prefijo BASE_PATH de la URI
-        $basePath = parse_url(BASE_URL, PHP_URL_PATH);
-        if (str_starts_with($requestUri, $basePath)) {
+        $basePath = parse_url(BASE_URL, PHP_URL_PATH) ?? '';
+        if ($basePath !== '' && str_starts_with($requestUri, $basePath)) {
             $requestUri = substr($requestUri, strlen($basePath));
         }
         $requestUri = '/' . trim($requestUri, '/');
