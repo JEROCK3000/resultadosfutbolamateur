@@ -119,6 +119,10 @@ $pageTitle = $pageTitle ?? 'Resultados Campeonato de Fútbol';
             <?= e($l['name']) ?>
           </a>
         <?php endforeach; endif; ?>
+        <a href="<?= BASE_URL ?>/playoffs_custom.php" 
+           style="background:rgba(251,191,36,0.1); color:#fbbf24; border:1px solid rgba(251,191,36,0.2); font-weight:700;">
+           🏆 Llaves finales 2026
+        </a>
       </nav>
       <a href="<?= BASE_URL ?>/login" class="pub-login-btn">🔐 Admin</a>
     </div>

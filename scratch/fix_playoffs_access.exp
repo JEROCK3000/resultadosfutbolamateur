@@ -1,0 +1,30 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# Actualizar el .htaccess raíz para permitir archivos existentes (como playoffs_custom.php)
+send "echo '<IfModule mod_rewrite.c>' > /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+send "echo '    RewriteEngine On' >> /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+send "echo '    RewriteCond %{REQUEST_FILENAME} !-f' >> /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+send "echo '    RewriteCond %{REQUEST_FILENAME} !-d' >> /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+send "echo '    RewriteRule ^(.*)$ public/\$1 \[L\]' >> /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+send "echo '</IfModule>' >> /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+
+# Asegurar dueño
+send "chown solintee:solintee /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+
+send "exit\r"
+expect eof

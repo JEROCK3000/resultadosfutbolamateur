@@ -131,6 +131,11 @@ $flash = getFlash();
             <span class="nav-icon">🌐</span> Ver sitio público
           </a>
         </li>
+        <li class="nav-item">
+          <a href="<?= BASE_URL ?>/playoffs_custom.php" style="color:#fbbf24; font-weight:700;">
+            <span class="nav-icon">🏆</span> Llaves finales 2026
+          </a>
+        </li>
       </ul>
 
     </nav>

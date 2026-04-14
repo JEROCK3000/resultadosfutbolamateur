@@ -1,0 +1,24 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Traer el arreglo de Database.php
+send "cd /home/solintee/futbolborja.solinteec.com\r"
+expect "#"
+send "git pull origin main\r"
+expect "#"
+
+# 2. Corregir permisos de una vez por todas
+send "chown -R solintee:solintee /home/solintee/futbolborja.solinteec.com\r"
+expect "#"
+send "chmod -R 775 /home/solintee/futbolborja.solinteec.com/storage\r"
+expect "#"
+
+send "exit\r"
+expect eof
