@@ -1,0 +1,24 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Importar Esquema (Saltando los comandos de base de datos restringidos)
+send "sed '1,12d' /home/solintee/futbolborja.solinteec.com/docs/base-de-datos/2026-03-17-esquema-inicial.sql | mysql -u solintee_futborj -p'Peter2021.*FB' solintee_futborj\r"
+expect "#"
+
+# 2. Importar Usuarios (Saltando los comandos de base de datos restringidos)
+send "sed '1,7d' /home/solintee/futbolborja.solinteec.com/docs/base-de-datos/2026-03-17-usuarios-auditoria.sql | mysql -u solintee_futborj -p'Peter2021.*FB' solintee_futborj\r"
+expect "#"
+
+# 3. Dar permisos finales de nuevo por si acaso
+send "chown -R solintee:solintee /home/solintee/futbolborja.solinteec.com\r"
+expect "#"
+
+send "exit\r"
+expect eof

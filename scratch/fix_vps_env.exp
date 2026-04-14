@@ -1,0 +1,24 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Crear el .env basado en el ejemplo (SOLO en tu carpeta)
+send "cp /home/solintee/futbolborja.solinteec.com/.env.example /home/solintee/futbolborja.solinteec.com/.env\r"
+expect "#"
+
+# 2. Asegurar que solintee sea dueño del .env
+send "chown solintee:solintee /home/solintee/futbolborja.solinteec.com/.env\r"
+expect "#"
+
+# 3. Ver el log de errores de Apache para saber qué causó el 500
+send "tail -n 20 /usr/local/apache/logs/error_log | grep futbolborja\r"
+expect "#"
+
+send "exit\r"
+expect eof

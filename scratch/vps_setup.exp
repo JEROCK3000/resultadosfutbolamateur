@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Configurar el .env con los datos reales de la base de datos
+set env_content "APP_NAME='Resultados Futbol'\rAPP_URL=http://futbolborja.solinteec.com\rDB_HOST=localhost\rDB_NAME=solintee_futborj\rDB_USER=solintee_futborj\rDB_PASS='Peter2021.*FB'\r"
+send "echo '$env_content' > /home/solintee/futbolborja.solinteec.com/.env\r"
+expect "#"
+
+# Asegurar dueño
+send "chown solintee:solintee /home/solintee/futbolborja.solinteec.com/.env\r"
+expect "#"
+
+# 2. Importar la base de datos (usaremos los archivos que ya están en el servidor)
+# Primero el esquema inicial
+send "mysql -u solintee_futborj -p'Peter2021.*FB' solintee_futborj < /home/solintee/futbolborja.solinteec.com/docs/base-de-datos/2026-03-17-esquema-inicial.sql\r"
+expect "#"
+# Luego los usuarios
+send "mysql -u solintee_futborj -p'Peter2021.*FB' solintee_futborj < /home/solintee/futbolborja.solinteec.com/docs/base-de-datos/2026-03-17-usuarios-auditoria.sql\r"
+expect "#"
+
+# 3. Verificar si PHP es 8.2 o algo parecido
+send "php -v\r"
+expect "#"
+
+send "exit\r"
+expect eof

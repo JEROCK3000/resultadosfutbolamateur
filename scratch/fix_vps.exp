@@ -1,0 +1,22 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+send "chown -R solintee:solintee /home/solintee/futbolborja.solinteec.com\r"
+expect "#"
+send "find /home/solintee/futbolborja.solinteec.com -type d -exec chmod 755 {} \\;\r"
+expect "#"
+send "find /home/solintee/futbolborja.solinteec.com -type f -exec chmod 644 {} \\;\r"
+expect "#"
+send "chmod -R 775 /home/solintee/futbolborja.solinteec.com/storage\r"
+expect "#"
+send "ls -la /home/solintee/futbolborja.solinteec.com/public\r"
+expect "#"
+send "exit\r"
+expect eof

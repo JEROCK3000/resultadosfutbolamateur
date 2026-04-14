@@ -10,7 +10,7 @@ declare(strict_types=1);
 define('BASE_PATH', dirname(__DIR__));
 define('BASE_URL',
     (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
-    . '://' . $_SERVER['HTTP_HOST'] . '/resultadosfutbol/public'
+    . '://' . $_SERVER['HTTP_HOST'] . (str_contains($_SERVER['HTTP_HOST'], 'localhost') ? '/resultadosfutbol/public' : '')
 );
 
 // ─── Helpers y variables de entorno ─────────────────────────────────────────

@@ -1,0 +1,29 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Corregir public/index.php para que use la URL limpia
+send "sed -i \"s|'/resultadosfutbol/public'|''|g\" /home/solintee/futbolborja.solinteec.com/public/index.php\r"
+expect "#"
+
+# 2. Arreglar y importar SQL (Quitando CREATE DATABASE y USE que daban error)
+# Limpiamos el esquema inicial
+send "grep -vE 'CREATE DATABASE|USE ' /home/solintee/futbolborja.solinteec.com/docs/base-de-datos/2026-03-17-esquema-inicial.sql > /tmp/schema.sql\r"
+expect "#"
+send "mysql -u solintee_futborj -p'Peter2021.*FB' solintee_futborj < /tmp/schema.sql\r"
+expect "#"
+
+# Limpiamos los usuarios
+send "grep -vE 'CREATE DATABASE|USE ' /home/solintee/futbolborja.solinteec.com/docs/base-de-datos/2026-03-17-usuarios-auditoria.sql > /tmp/users.sql\r"
+expect "#"
+send "mysql -u solintee_futborj -p'Peter2021.*FB' solintee_futborj < /tmp/users.sql\r"
+expect "#"
+
+send "exit\r"
+expect eof

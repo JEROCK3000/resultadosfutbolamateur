@@ -3,7 +3,7 @@
 -- Fecha: 2026-03-17
 -- ============================================================
 
-USE resultadosfutbol;
+
 
 -- ── Usuarios del sistema ──────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
