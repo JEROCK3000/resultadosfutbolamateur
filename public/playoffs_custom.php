@@ -502,7 +502,7 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         <h3 style="margin:0 0 10px 0; color:var(--text);">LIGA DEPORTIVA PARROQUIAL SAN FRANCISCO DE BORJA</h3>
         <p style="margin:0 0 20px 0; color:var(--title);">Sistema de ida y vuelta.</p>
         <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:15px; margin-top:20px;">
-            <a href="public/index.php" class="btn">Volver</a>
+            <a href="index.php" class="btn">Volver</a>
             <button type="button" onclick="exportPNG()" class="btn">Guardar PNG</button>
             <button type="button" onclick="exportPDF()" class="btn">Guardar PDF</button>
         </div>
