@@ -1,21 +1,21 @@
 {
     "O1": {
-        "ida_h": "3",
-        "ida_a": "0",
+        "ida_h": "",
+        "ida_a": "",
         "vue_h": "",
         "vue_a": "",
         "override": ""
     },
     "O2": {
-        "ida_h": "5",
-        "ida_a": "1",
+        "ida_h": "",
+        "ida_a": "",
         "vue_h": "",
         "vue_a": "",
         "override": ""
     },
     "O3": {
-        "ida_h": "3",
-        "ida_a": "1",
+        "ida_h": "",
+        "ida_a": "",
         "vue_h": "",
         "vue_a": "",
         "override": ""
@@ -28,8 +28,8 @@
         "override": ""
     },
     "O5": {
-        "ida_h": "4",
-        "ida_a": "1",
+        "ida_h": "",
+        "ida_a": "",
         "vue_h": "",
         "vue_a": "",
         "override": ""
@@ -42,15 +42,15 @@
         "override": ""
     },
     "O7": {
-        "ida_h": "4",
-        "ida_a": "1",
+        "ida_h": "",
+        "ida_a": "",
         "vue_h": "",
         "vue_a": "",
         "override": ""
     },
     "O8": {
-        "ida_h": "2",
-        "ida_a": "2",
+        "ida_h": "",
+        "ida_a": "",
         "vue_h": "",
         "vue_a": "",
         "override": ""

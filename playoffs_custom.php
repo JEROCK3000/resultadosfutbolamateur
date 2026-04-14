@@ -194,6 +194,14 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
               </select>";
     $html .= "</div>";
 
+    // Encabezados de columnas (IDA / VUELTA)
+    $html .= "<div style='display:flex; justify-content:flex-end; gap:4px; padding-right:4px; margin-top:-2px; margin-bottom:2px;'>";
+    $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>IDA</span>";
+    if (!$isFinal) {
+        $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>VTA</span>";
+    }
+    $html .= "</div>";
+
     // HOME TEAM
     $html .= "<div class='team-row'>";
     $html .= "<div class='team-name' title='" . htmlspecialchars($th) . "'>" . htmlspecialchars($th) . "</div>";
@@ -277,29 +285,40 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         }
 
         .btn {
-            padding: 10px 20px;
-            background: var(--btn-bg);
-            color: white;
-            border: none;
-            border-radius: 6px;
+            padding: 10px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            /* Glass base */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 13px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
             text-decoration: none;
             display: inline-block;
-            transition: .2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
         .btn:hover {
-            opacity: 0.8;
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
 
         .bracket-container {
             display: flex;
             justify-content: center;
             overflow-x: auto;
-            padding: 40px 0 20px;
-            /* espaciado superior extra para el trofeo */
+            padding: 40px 0 60px;
+            /* espacio para la firma */
             gap: 30px;
+            position: relative;
         }
 
         .col {
@@ -445,14 +464,20 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
             background: var(--score-hue-bg);
         }
 
-        .flash {
-            background: #dcfce7;
-            color: #166534;
-            padding: 10px;
-            text-align: center;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border: 1px solid #bbf7d0;
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes bounce {
@@ -473,17 +498,18 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
 
     <div class="header">
         <button class="theme-toggle" type="button" onclick="toggleTheme()">🌙 Oscuro</button>
-        <h1 style="margin:0 0 10px 0; color:var(--text);">🏆 Llaves Fases Finales (Modo Especial)</h1>
-        <p style="margin:0 0 20px 0; color:var(--title);">Sistema de ida y vuelta con posiciones según tu imagen.</p>
-        <div>
-            <a href="public/index.php" class="btn" style="background:var(--title);margin-right:10px">← Volver al
-                Sistema</a>
-            <button form="bracketForm" type="submit" class="btn">💾 Guardar Resultados</button>
+        <h1 style="margin:0 0 10px 0; color:var(--text);">🏆 LLAVES FASE FINAL CAMPEONATO 2026 🏆</h1>
+        <h3 style="margin:0 0 10px 0; color:var(--text);">LIGA DEPORTIVA PARROQUIAL SAN FRANCISCO DE BORJA</h3>
+        <p style="margin:0 0 20px 0; color:var(--title);">Sistema de ida y vuelta.</p>
+        <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:15px; margin-top:20px;">
+            <a href="public/index.php" class="btn">Volver</a>
+            <button type="button" onclick="exportPNG()" class="btn">Guardar PNG</button>
+            <button type="button" onclick="exportPDF()" class="btn">Guardar PDF</button>
         </div>
     </div>
 
     <?php if (isset($_GET['saved'])): ?>
-        <div class="flash">✅ ¡Resultados guardados!</div>
+        <div id="flash-toast" class="toast-notification">✅ ¡Resultados guardados con éxito!</div>
     <?php endif; ?>
 
     <form id="bracketForm" method="POST">
@@ -518,7 +544,9 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
 
             <!-- CENTRO: FINAL -->
             <div class="col" style="justify-content:center;">
-                <div style="text-align:center; font-size:3.5rem; height:60px; line-height:60px; animation: bounce 2s infinite; text-shadow: 0 10px 20px rgba(251, 191, 36, 0.2);">🏆</div>
+                <div
+                    style="text-align:center; font-size:3.5rem; height:60px; line-height:60px; animation: bounce 2s infinite; text-shadow: 0 10px 20px rgba(251, 191, 36, 0.2);">
+                    🏆</div>
                 <?= renderMatchBox('F1', "👑 GRAN FINAL", true, 'line-in-left line-in-right') ?>
                 <div style="height:60px;"></div>
             </div>
@@ -549,11 +577,32 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
                     <?= renderMatchBox('O8', "Octavos - O8") ?>
                 </div>
             </div>
+
+            <!-- MARCA DE AGUA PERMANENTE -->
+            <div
+                style="position: absolute; bottom: 185px; left: 50%; transform: translateX(-50%); font-size: 13px; font-weight: bold; color: var(--text); opacity: 0.15; font-family: monospace; letter-spacing: 1px; pointer-events: none;">
+                Powered by SOLINTEEC DEVS & TECH
+            </div>
         </div>
 
     </form>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <script>
+        // Ocultar toast automáticamente
+        const toast = document.getElementById('flash-toast');
+        if (toast) {
+            // Empieza a ocultarse tras 2.5s
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                // Se remueve completamente al terminar la transición
+                setTimeout(() => toast.remove(), 500);
+            }, 2500);
+        }
+
         const savedTheme = localStorage.getItem('theme') || 'light';
         if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 
@@ -566,6 +615,79 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
                 document.documentElement.setAttribute('data-theme', 'dark');
                 localStorage.setItem('theme', 'dark');
             }
+        }
+
+        // Lógica de exportación
+        async function getCanvas() {
+            const el = document.querySelector('.bracket-container');
+            el.style.position = 'relative';
+
+            // 1. Agregar Título Oficial Dinámico
+            const titleLayer = document.createElement('div');
+            titleLayer.style.position = 'absolute';
+            titleLayer.style.top = '15px';
+            titleLayer.style.left = '50%';
+            titleLayer.style.transform = 'translateX(-50%)';
+            titleLayer.style.textAlign = 'center';
+            titleLayer.style.width = '100%';
+            titleLayer.style.zIndex = '5';
+            titleLayer.innerHTML = `
+                <h2 style="margin:0; font-family:'Arial', sans-serif; color:var(--text); font-size:24px; text-transform:uppercase; letter-spacing:2px; font-weight:800; text-shadow:0 2px 10px rgba(0,0,0,0.1);">FASE FINAL CAMPEONATO 2026</h2>
+                <h3 style="margin:8px 0 0; font-family:'Arial', sans-serif; color:var(--title); font-size:15px; letter-spacing:1px; font-weight:600;">LIGA DEPORTIVA PARROQUIAL SAN FRANCISCO DE BORJA</h3>
+            `;
+            el.appendChild(titleLayer);
+
+            // Ocultar temporalmente los selects de desempate
+            const selects = el.querySelectorAll('select');
+            const originalDisplays = [];
+            selects.forEach(s => {
+                originalDisplays.push(s.style.display);
+                if (s.value === '') s.style.display = 'none';
+            });
+
+            // Expandir los bordes temporales para que quepa todo el texto hermoso
+            const origPadding = el.style.padding;
+            el.style.padding = '100px 30px 60px 30px';
+
+            const bgColors = window.getComputedStyle(document.body).backgroundColor;
+
+            // Escala 4x = 400% de calidad!
+            const canvas = await html2canvas(el, {
+                backgroundColor: bgColors,
+                scale: 4
+            });
+
+            // Limpieza total
+            titleLayer.remove();
+            el.style.padding = origPadding;
+            selects.forEach((s, idx) => {
+                s.style.display = originalDisplays[idx];
+            });
+
+            return canvas;
+        }
+
+        async function exportPNG() {
+            const canvas = await getCanvas();
+            const link = document.createElement('a');
+            link.download = 'fase-final-resultados.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        async function exportPDF() {
+            const canvas = await getCanvas();
+            const imgData = canvas.toDataURL('image/png');
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save('fase-final-resultados.pdf');
         }
     </script>
 
