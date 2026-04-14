@@ -10,10 +10,10 @@ if (!isset($_SESSION['user_id'])) {
     die("Debes iniciar sesión como administrador.");
 }
 
-define('BASE_PATH', __DIR__);
-require_once __DIR__ . '/helpers/functions.php';
-require_once __DIR__ . '/core/Database.php';
-require_once __DIR__ . '/app/Controllers/StandingsController.php';
+define('BASE_PATH', dirname(__DIR__));
+require_once dirname(__DIR__) . '/helpers/functions.php';
+require_once dirname(__DIR__) . '/core/Database.php';
+require_once dirname(__DIR__) . '/app/Controllers/StandingsController.php';
 
 $league_id = filter_input(INPUT_GET, 'league_id', FILTER_VALIDATE_INT) ?: 2; // Default 2 (Copa Valle)
 
