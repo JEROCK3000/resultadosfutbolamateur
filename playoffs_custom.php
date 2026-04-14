@@ -1,0 +1,574 @@
+<?php
+/**
+ * playoffs_custom.php — Llaves Personalizadas Temporales
+ * Solicitud especial: Ida y Vuelta, Final Única, Cruces exactos de imagen.
+ */
+declare(strict_types=1);
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    die("Debes iniciar sesión como administrador.");
+}
+
+define('BASE_PATH', __DIR__);
+require_once __DIR__ . '/helpers/functions.php';
+require_once __DIR__ . '/core/Database.php';
+require_once __DIR__ . '/app/Controllers/StandingsController.php';
+
+$league_id = filter_input(INPUT_GET, 'league_id', FILTER_VALIDATE_INT) ?: 2; // Default 2 (Copa Valle)
+
+// Equipos literales de la imagen proporcionada por el usuario (1 al 16)
+$teamsByPos = [
+    1 => 'DEPORTIVO COSANGA',
+    2 => 'ANDES ORIENTAL',
+    3 => 'T 12 F.C',
+    4 => 'BORJA S.C',
+    5 => 'BAEZA CENTRAL',
+    6 => 'ORELLANA',
+    7 => 'VASCO',
+    8 => 'INDEPENDIENTE DE SUMACO',
+    9 => 'REAL MADRID',
+    10 => 'LIVERPOOL',
+    11 => 'JUVENTUS',
+    12 => 'LEONARDO MURIALDO',
+    13 => 'AMERICA',
+    14 => 'LAS VEGAS',
+    15 => 'ANDES JUNIOR',
+    16 => 'ATLETICO DEL VALLE'
+];
+
+// Configuración de los cruces octavos de final según la imagen enviada
+// Las llaves se definieron visualmente así:
+$octavos_layout = [
+    'O1' => [1, 16],
+    'O2' => [5, 10],
+    'O3' => [3, 14],
+    'O4' => [7, 12],
+    'O5' => [2, 15],
+    'O6' => [6, 9],
+    'O7' => [4, 13],
+    'O8' => [8, 11]
+];
+
+// Nodos del Bracket
+$nodes = [
+    'O1',
+    'O2',
+    'O3',
+    'O4',
+    'O5',
+    'O6',
+    'O7',
+    'O8', // Octavos
+    'Q1',
+    'Q2',
+    'Q3',
+    'Q4',                         // Cuartos
+    'S1',
+    'S2',                                     // Semis
+    'F1'                                            // Final
+];
+
+$file_path = __DIR__ . "/storage/custom_bracket_{$league_id}.json";
+
+// Guardar resultados si se hace POST
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = [];
+    foreach ($nodes as $n) {
+        $data[$n] = [
+            'ida_h' => $_POST["{$n}_ida_h"] ?? '',
+            'ida_a' => $_POST["{$n}_ida_a"] ?? '',
+            'vue_h' => $_POST["{$n}_vue_h"] ?? '',
+            'vue_a' => $_POST["{$n}_vue_a"] ?? '',
+            'override' => $_POST["{$n}_override"] ?? ''
+        ];
+    }
+    file_put_contents($file_path, json_encode($data, JSON_PRETTY_PRINT));
+    header("Location: playoffs_custom.php?league_id={$league_id}&saved=1");
+    exit;
+}
+
+// Cargar estado
+$state = [];
+if (file_exists($file_path)) {
+    $state = json_decode(file_get_contents($file_path), true) ?: [];
+}
+
+/** Calcula el ganador basado en goles o desempate manual */
+function calcWinner($nodeId, $homeName, $awayName)
+{
+    global $state;
+    if (empty($homeName) || empty($awayName))
+        return "";
+
+    $override = $state[$nodeId]['override'] ?? '';
+    if ($override === 'H')
+        return $homeName . " (P)";
+    if ($override === 'A')
+        return $awayName . " (P)";
+
+    // Requiere que ida y vuelta tengan datos para calcular automático
+    $idaH = $state[$nodeId]['ida_h'] ?? '';
+    $idaA = $state[$nodeId]['ida_a'] ?? '';
+    $vueH = $state[$nodeId]['vue_h'] ?? '';
+    $vueA = $state[$nodeId]['vue_a'] ?? '';
+
+    if ($idaH === '' || $idaA === '' || $vueH === '' || $vueA === '') {
+        return ""; // Falta registrar algún partido (Ida o Vuelta)
+    }
+
+    $ih = (int) $idaH;
+    $ia = (int) $idaA;
+    $vh = (int) $vueH;
+    $va = (int) $vueA;
+
+    $th = $ih + $vh;
+    $ta = $ia + $va;
+
+    if ($th > $ta)
+        return $homeName;
+    if ($ta > $th)
+        return $awayName;
+
+    return "Empate (Desempatar)";
+}
+
+// NOMBRES CALCULADOS AUTOMÁTICAMENTE
+$names = [];
+
+// Octavos de final
+foreach ($octavos_layout as $node => $posarr) {
+    $names[$node]['h'] = $posarr[0] . '° ' . ($teamsByPos[$posarr[0]] ?? 'Pendiente');
+    $names[$node]['a'] = $posarr[1] . '° ' . ($teamsByPos[$posarr[1]] ?? 'Pendiente');
+}
+
+// Cuartos de final
+$names['Q1']['h'] = calcWinner('O1', $names['O1']['h'], $names['O1']['a']);
+$names['Q1']['a'] = calcWinner('O2', $names['O2']['h'], $names['O2']['a']);
+$names['Q2']['h'] = calcWinner('O3', $names['O3']['h'], $names['O3']['a']);
+$names['Q2']['a'] = calcWinner('O4', $names['O4']['h'], $names['O4']['a']);
+$names['Q3']['h'] = calcWinner('O5', $names['O5']['h'], $names['O5']['a']);
+$names['Q3']['a'] = calcWinner('O6', $names['O6']['h'], $names['O6']['a']);
+$names['Q4']['h'] = calcWinner('O7', $names['O7']['h'], $names['O7']['a']);
+$names['Q4']['a'] = calcWinner('O8', $names['O8']['h'], $names['O8']['a']);
+
+// Semifinales
+$names['S1']['h'] = calcWinner('Q1', $names['Q1']['h'], $names['Q1']['a']);
+$names['S1']['a'] = calcWinner('Q2', $names['Q2']['h'], $names['Q2']['a']);
+$names['S2']['h'] = calcWinner('Q3', $names['Q3']['h'], $names['Q3']['a']);
+$names['S2']['a'] = calcWinner('Q4', $names['Q4']['h'], $names['Q4']['a']);
+
+// Final
+$names['F1']['h'] = calcWinner('S1', $names['S1']['h'], $names['S1']['a']);
+$names['F1']['a'] = calcWinner('S2', $names['S2']['h'], $names['S2']['a']);
+
+function getVal($node, $field)
+{
+    global $state;
+    return $state[$node][$field] ?? '';
+}
+
+function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
+{
+    global $names;
+    $idaH = getVal($nodeId, 'ida_h');
+    $idaA = getVal($nodeId, 'ida_a');
+    $vueH = getVal($nodeId, 'vue_h');
+    $vueA = getVal($nodeId, 'vue_a');
+
+    $th = $names[$nodeId]['h'] ?: 'Esperando rival...';
+    $ta = $names[$nodeId]['a'] ?: 'Esperando rival...';
+
+    $override = getVal($nodeId, 'override');
+    $selH = ($override === 'H') ? 'selected' : '';
+    $selA = ($override === 'A') ? 'selected' : '';
+    $auto = ($override === '') ? 'selected' : '';
+
+    $html = "<div class='match-box {$customClass}'>";
+    $html .= "<div class='match-title' style='display:flex; justify-content:space-between; align-items:center;'>";
+    $html .= "<span>$title</span>";
+    $html .= "<select name='{$nodeId}_override' style='font-size:9px; border:1px solid var(--border); border-radius:3px; background:var(--box-bg); color:var(--text);' title='Desempate manual'>
+                <option value='' $auto>Auto</option>
+                <option value='H' $selH>+P L</option>
+                <option value='A' $selA>+P V</option>
+              </select>";
+    $html .= "</div>";
+
+    // HOME TEAM
+    $html .= "<div class='team-row'>";
+    $html .= "<div class='team-name' title='" . htmlspecialchars($th) . "'>" . htmlspecialchars($th) . "</div>";
+    $html .= "<input type='text' name='{$nodeId}_ida_h' value='{$idaH}' class='score-input' title='Ida'>";
+    if (!$isFinal) {
+        $html .= "<input type='text' name='{$nodeId}_vue_h' value='{$vueH}' class='score-input hue' title='Vuelta'>";
+    }
+    $html .= "</div>";
+
+    // AWAY TEAM
+    $html .= "<div class='team-row'>";
+    $html .= "<div class='team-name' title='" . htmlspecialchars($ta) . "'>" . htmlspecialchars($ta) . "</div>";
+    $html .= "<input type='text' name='{$nodeId}_ida_a' value='{$idaA}' class='score-input' title='Ida'>";
+    if (!$isFinal) {
+        $html .= "<input type='text' name='{$nodeId}_vue_a' value='{$vueA}' class='score-input hue' title='Vuelta'>";
+    }
+    $html .= "</div>";
+
+    $html .= "</div>";
+    return $html;
+}
+
+?>
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Generador Temporal de Llaves</title>
+    <style>
+        :root {
+            --bg: #eef2f5;
+            --box-bg: #fff;
+            --text: #333;
+            --border: #cbd5e1;
+            --title: #64748b;
+            --score-bg: #fff;
+            --score-hue-bg: #eff6ff;
+            --score-hue-border: #93c5fd;
+            --btn-bg: #1e40af;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0d1117;
+            --box-bg: #161b22;
+            --text: #e6edf3;
+            --border: #30363d;
+            --title: #8b949e;
+            --score-bg: #161b22;
+            --score-hue-bg: rgba(96, 165, 250, 0.1);
+            --score-hue-border: #3b82f6;
+            --btn-bg: #3b82f6;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 0;
+            right: 20px;
+            background: var(--box-bg);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: var(--btn-bg);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            transition: .2s;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .bracket-container {
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+            padding: 40px 0 20px;
+            /* espaciado superior extra para el trofeo */
+            gap: 30px;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 220px;
+            position: relative;
+        }
+
+        /* Conexiones CSS */
+        .match-pair {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            flex: 1;
+            position: relative;
+            padding: 10px 0;
+        }
+
+        .line-out-left::after {
+            content: "";
+            position: absolute;
+            right: -15px;
+            top: 25%;
+            bottom: 25%;
+            border: 2px solid var(--border);
+            border-left: none;
+            width: 15px;
+            border-radius: 0 4px 4px 0;
+            z-index: 0;
+        }
+
+        .line-out-right::before {
+            content: "";
+            position: absolute;
+            left: -15px;
+            top: 25%;
+            bottom: 25%;
+            border: 2px solid var(--border);
+            border-right: none;
+            width: 15px;
+            border-radius: 4px 0 0 4px;
+            z-index: 0;
+        }
+
+        .line-in-left::before {
+            content: "";
+            position: absolute;
+            left: -17px;
+            top: 50%;
+            width: 15px;
+            border-top: 2px solid var(--border);
+            z-index: 0;
+        }
+
+        .line-in-right::after {
+            content: "";
+            position: absolute;
+            right: -17px;
+            top: 50%;
+            width: 15px;
+            border-top: 2px solid var(--border);
+            z-index: 0;
+        }
+
+        .line-out-straight-left::after {
+            content: "";
+            position: absolute;
+            right: -17px;
+            top: 50%;
+            width: 15px;
+            border-top: 2px solid var(--border);
+            z-index: 0;
+        }
+
+        .line-out-straight-right::before {
+            content: "";
+            position: absolute;
+            left: -17px;
+            top: 50%;
+            width: 15px;
+            border-top: 2px solid var(--border);
+            z-index: 0;
+        }
+
+        .match-box {
+            background: var(--box-bg);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            padding: 5px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 2;
+            margin: 10px 0;
+        }
+
+        .match-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--title);
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .team-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px;
+            border-bottom: 1px solid var(--border);
+            gap: 4px;
+        }
+
+        .team-row:last-child {
+            border-bottom: none;
+        }
+
+        .team-name {
+            font-size: 10px;
+            font-weight: 700;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: -0.3px;
+        }
+
+        .score-input {
+            width: 22px;
+            height: 18px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            background: var(--score-bg);
+            color: var(--text);
+        }
+
+        .score-input.hue {
+            border-color: var(--score-hue-border);
+            background: var(--score-hue-bg);
+        }
+
+        .flash {
+            background: #dcfce7;
+            color: #166534;
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #bbf7d0;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <button class="theme-toggle" type="button" onclick="toggleTheme()">🌙 Oscuro</button>
+        <h1 style="margin:0 0 10px 0; color:var(--text);">🏆 Llaves Fases Finales (Modo Especial)</h1>
+        <p style="margin:0 0 20px 0; color:var(--title);">Sistema de ida y vuelta con posiciones según tu imagen.</p>
+        <div>
+            <a href="public/index.php" class="btn" style="background:var(--title);margin-right:10px">← Volver al
+                Sistema</a>
+            <button form="bracketForm" type="submit" class="btn">💾 Guardar Resultados</button>
+        </div>
+    </div>
+
+    <?php if (isset($_GET['saved'])): ?>
+        <div class="flash">✅ ¡Resultados guardados!</div>
+    <?php endif; ?>
+
+    <form id="bracketForm" method="POST">
+
+        <div class="bracket-container">
+            <!-- IZQUIERDA: OCTAVOS -->
+            <div class="col">
+                <div class="match-pair line-out-left">
+                    <?= renderMatchBox('O1', "Octavos - O1") ?>
+                    <?= renderMatchBox('O2', "Octavos - O2") ?>
+                </div>
+                <div class="match-pair line-out-left">
+                    <?= renderMatchBox('O3', "Octavos - O3") ?>
+                    <?= renderMatchBox('O4', "Octavos - O4") ?>
+                </div>
+            </div>
+
+            <!-- IZQUIERDA: CUARTOS -->
+            <div class="col">
+                <div class="match-pair line-out-left">
+                    <?= renderMatchBox('Q1', "Cuartos - Q1", false, 'line-in-left') ?>
+                    <?= renderMatchBox('Q2', "Cuartos - Q2", false, 'line-in-left') ?>
+                </div>
+            </div>
+
+            <!-- IZQUIERDA: SEMIS -->
+            <div class="col">
+                <div class="match-pair">
+                    <?= renderMatchBox('S1', "Semifinal - S1", false, 'line-in-left line-out-straight-left') ?>
+                </div>
+            </div>
+
+            <!-- CENTRO: FINAL -->
+            <div class="col" style="justify-content:center;">
+                <div style="text-align:center; font-size:3.5rem; height:60px; line-height:60px; animation: bounce 2s infinite; text-shadow: 0 10px 20px rgba(251, 191, 36, 0.2);">🏆</div>
+                <?= renderMatchBox('F1', "👑 GRAN FINAL", true, 'line-in-left line-in-right') ?>
+                <div style="height:60px;"></div>
+            </div>
+
+            <!-- DERECHA: SEMIS -->
+            <div class="col">
+                <div class="match-pair">
+                    <?= renderMatchBox('S2', "Semifinal - S2", false, 'line-in-right line-out-straight-right') ?>
+                </div>
+            </div>
+
+            <!-- DERECHA: CUARTOS -->
+            <div class="col">
+                <div class="match-pair line-out-right">
+                    <?= renderMatchBox('Q3', "Cuartos - Q3", false, 'line-in-right') ?>
+                    <?= renderMatchBox('Q4', "Cuartos - Q4", false, 'line-in-right') ?>
+                </div>
+            </div>
+
+            <!-- DERECHA: OCTAVOS -->
+            <div class="col">
+                <div class="match-pair line-out-right">
+                    <?= renderMatchBox('O5', "Octavos - O5") ?>
+                    <?= renderMatchBox('O6', "Octavos - O6") ?>
+                </div>
+                <div class="match-pair line-out-right">
+                    <?= renderMatchBox('O7', "Octavos - O7") ?>
+                    <?= renderMatchBox('O8', "Octavos - O8") ?>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+    <script>
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        if (savedTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
+        function toggleTheme() {
+            const bg = document.documentElement.getAttribute('data-theme');
+            if (bg === 'dark') {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+    </script>
+
+</body>
+
+</html>
