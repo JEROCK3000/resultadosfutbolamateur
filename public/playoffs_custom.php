@@ -6,9 +6,7 @@
 declare(strict_types=1);
 session_start();
 
-if (!isset($_SESSION['user_id'])) {
-    die("Debes iniciar sesión como administrador.");
-}
+$isAdmin = isset($_SESSION['user_id']);
 
 define('BASE_PATH', dirname(__DIR__));
 define('BASE_URL',
@@ -73,10 +71,22 @@ $nodes = [
     'F1'                                            // Final
 ];
 
-$file_path = __DIR__ . "/storage/custom_bracket_{$league_id}.json";
+$file_path = BASE_PATH . "/storage/custom_bracket_{$league_id}.json";
+$counter_path = BASE_PATH . "/storage/playoffs_visits_{$league_id}.txt";
+
+// Lógica del contador de visitas (Solo incrementa al cargar normal por GET)
+$visits = 0;
+if (file_exists($counter_path)) {
+    $visits = (int)file_get_contents($counter_path);
+}
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $visits++;
+    @file_put_contents($counter_path, (string)$visits);
+}
 
 // Guardar resultados si se hace POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$isAdmin) die("Acceso denegado.");
     $data = [];
     foreach ($nodes as $n) {
         $data[$n] = [
@@ -87,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'override' => $_POST["{$n}_override"] ?? ''
         ];
     }
-    file_put_contents($file_path, json_encode($data, JSON_PRETTY_PRINT));
+    @file_put_contents($file_path, json_encode($data, JSON_PRETTY_PRINT));
     header("Location: playoffs_custom.php?league_id={$league_id}&saved=1");
     exit;
 }
@@ -174,7 +184,11 @@ function getVal($node, $field)
 
 function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
 {
-    global $names;
+    global $names, $isAdmin;
+    
+    $disAttr = $isAdmin ? '' : 'disabled';
+    $rdAttr = $isAdmin ? '' : 'readonly';
+
     $idaH = getVal($nodeId, 'ida_h');
     $idaA = getVal($nodeId, 'ida_a');
     $vueH = getVal($nodeId, 'vue_h');
@@ -191,7 +205,7 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
     $html = "<div class='match-box {$customClass}'>";
     $html .= "<div class='match-title' style='display:flex; justify-content:space-between; align-items:center;'>";
     $html .= "<span>$title</span>";
-    $html .= "<select name='{$nodeId}_override' style='font-size:9px; border:1px solid var(--border); border-radius:3px; background:var(--box-bg); color:var(--text);' title='Desempate manual'>
+    $html .= "<select name='{$nodeId}_override' style='font-size:9px; border:1px solid var(--border); border-radius:3px; background:var(--box-bg); color:var(--text);' title='Desempate manual' {$disAttr}>
                 <option value='' $auto>Auto</option>
                 <option value='H' $selH>+P L</option>
                 <option value='A' $selA>+P V</option>
@@ -209,18 +223,18 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
     // HOME TEAM
     $html .= "<div class='team-row'>";
     $html .= "<div class='team-name' title='" . htmlspecialchars($th) . "'>" . htmlspecialchars($th) . "</div>";
-    $html .= "<input type='text' name='{$nodeId}_ida_h' value='{$idaH}' class='score-input' title='Ida'>";
+    $html .= "<input type='text' name='{$nodeId}_ida_h' value='{$idaH}' class='score-input' title='Ida' {$rdAttr}>";
     if (!$isFinal) {
-        $html .= "<input type='text' name='{$nodeId}_vue_h' value='{$vueH}' class='score-input hue' title='Vuelta'>";
+        $html .= "<input type='text' name='{$nodeId}_vue_h' value='{$vueH}' class='score-input hue' title='Vuelta' {$rdAttr}>";
     }
     $html .= "</div>";
 
     // AWAY TEAM
     $html .= "<div class='team-row'>";
     $html .= "<div class='team-name' title='" . htmlspecialchars($ta) . "'>" . htmlspecialchars($ta) . "</div>";
-    $html .= "<input type='text' name='{$nodeId}_ida_a' value='{$idaA}' class='score-input' title='Ida'>";
+    $html .= "<input type='text' name='{$nodeId}_ida_a' value='{$idaA}' class='score-input' title='Ida' {$rdAttr}>";
     if (!$isFinal) {
-        $html .= "<input type='text' name='{$nodeId}_vue_a' value='{$vueA}' class='score-input hue' title='Vuelta'>";
+        $html .= "<input type='text' name='{$nodeId}_vue_a' value='{$vueA}' class='score-input hue' title='Vuelta' {$rdAttr}>";
     }
     $html .= "</div>";
 
@@ -509,6 +523,9 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
             <a href="<?= BASE_URL ?>" class="btn">Volver</a>
             <button type="button" onclick="exportPNG()" class="btn">Guardar PNG</button>
             <button type="button" onclick="exportPDF()" class="btn">Guardar PDF</button>
+            <?php if($isAdmin): ?>
+                <button type="submit" form="bracketForm" class="btn" style="background:var(--btn-bg);color:#fff;border-color:var(--btn-bg);">Actualizar Resultados</button>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -582,7 +599,6 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
                 </div>
             </div>
 
-            <!-- MARCA DE AGUA PERMANENTE -->
             <div
                 style="position: absolute; bottom: 185px; left: 50%; transform: translateX(-50%); font-size: 13px; font-weight: bold; color: var(--text); opacity: 0.15; font-family: monospace; letter-spacing: 1px; pointer-events: none;">
                 Powered by SOLINTEEC DEVS & TECH
@@ -590,6 +606,11 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         </div>
 
     </form>
+
+    <!-- Contador de visitas (ignorado al exportar con html2canvas) -->
+    <div data-html2canvas-ignore="true" style="position: fixed; bottom: 15px; right: 15px; font-family: monospace; font-size: 11px; font-weight: bold; color: var(--text); opacity: 0.2; pointer-events: none; z-index: 100;">
+        👁 Visitas: <?= number_format($visits, 0, ',', '.') ?>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
