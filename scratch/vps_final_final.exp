@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Traer el arreglo de código
+send "cd /home/solintee/futbolborja.solinteec.com\r"
+expect "#"
+send "git pull origin main\r"
+expect "#"
+
+# 2. Reactivar el .htaccess de la raíz
+send "mv /home/solintee/futbolborja.solinteec.com/.htaccess.disabled /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+
+# 3. Borrar basura de prueba
+send "rm /home/solintee/futbolborja.solinteec.com/public/info.php\r"
+expect "#"
+
+# 4. Asegurar permisos finales
+send "chown -R solintee:solintee /home/solintee/futbolborja.solinteec.com\r"
+expect "#"
+send "chmod -R 775 /home/solintee/futbolborja.solinteec.com/storage\r"
+expect "#"
+
+send "exit\r"
+expect eof

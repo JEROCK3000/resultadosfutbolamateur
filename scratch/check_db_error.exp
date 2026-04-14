@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# 1. Leer el log más reciente de la aplicación
+send "ls -t /home/solintee/futbolborja.solinteec.com/storage/logs/*.log | head -n 1 | xargs tail -n 20\r"
+expect "#"
+
+# 2. Ver el .env por última vez
+send "cat /home/solintee/futbolborja.solinteec.com/.env\r"
+expect "#"
+
+send "exit\r"
+expect eof

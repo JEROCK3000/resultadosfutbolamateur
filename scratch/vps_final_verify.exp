@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set password "EAfG9KvfuDW9"
+set host "74.48.140.124"
+set user "root"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "#"
+
+# Asegurar que info.php no existe y los permisos son de solintee
+send "rm -f /home/solintee/futbolborja.solinteec.com/public/info.php\r"
+expect "#"
+send "chown -R solintee:solintee /home/solintee/futbolborja.solinteec.com\r"
+expect "#"
+send "ls -la /home/solintee/futbolborja.solinteec.com/.htaccess\r"
+expect "#"
+
+send "exit\r"
+expect eof

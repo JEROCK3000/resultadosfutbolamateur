@@ -27,9 +27,9 @@ class Database
     {
         $host     = $_ENV['DB_HOST']     ?? '127.0.0.1';
         $port     = $_ENV['DB_PORT']     ?? '3306';
-        $database = $_ENV['DB_DATABASE'] ?? 'resultadosfutbol';
-        $username = $_ENV['DB_USERNAME'] ?? 'root';
-        $password = $_ENV['DB_PASSWORD'] ?? '';
+        $database = $_ENV['DB_DATABASE'] ?? $_ENV['DB_NAME'] ?? 'resultadosfutbol';
+        $username = $_ENV['DB_USERNAME'] ?? $_ENV['DB_USER'] ?? 'root';
+        $password = $_ENV['DB_PASSWORD'] ?? $_ENV['DB_PASS'] ?? '';
 
         $dsn = "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
 
