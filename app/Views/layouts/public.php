@@ -8,6 +8,14 @@ $pageTitle = $pageTitle ?? 'Resultados Campeonato de Fútbol';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($pageTitle) ?> | Campeonato de Fútbol</title>
   <meta name="description" content="Resultados, tabla de posiciones y próximos encuentros del fútbol amateur de Borja, Quijos, Amazonía Ecuatoriana.">
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="<?= BASE_URL ?>/manifest.json">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Liga Borja">
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -118,8 +126,24 @@ $pageTitle = $pageTitle ?? 'Resultados Campeonato de Fútbol';
   <main class="pub-main">
     <?= $content ?>
   </main>
-  <footer style="text-align:center;padding:20px;font-size:.76rem;color:var(--pub-muted);border-top:1px solid var(--pub-border)">
-    ⚽ Campeonato de Fútbol · Sistema Multiligas · Borja, Quijos, Amazonía Ecuatoriana
+  <footer class="footer" style="text-align:center;padding:20px;font-size:.76rem;color:var(--pub-muted);border-top:1px solid var(--pub-border)">
+    <p>&copy; <?= date('Y') ?> Resultados Fútbol Amateur - Liga San Francisco de Borja, Quijos.</p>
+    <p><small>Desarrollado para la pasión del deporte local. Powered by SOLINTEEC DEVS & TECH</small></p>
   </footer>
+
+  <script>
+    // Registro del PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js')
+          .then(registration => {
+            console.log('SW Registrado correctamente:', registration.scope);
+          })
+          .catch(err => {
+            console.log('Fallo al registrar SW:', err);
+          });
+      });
+    }
+  </script>
 </body>
 </html>
