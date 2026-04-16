@@ -672,19 +672,28 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
 
             // Expandir los bordes temporales para que quepa todo el texto hermoso
             const origPadding = el.style.padding;
+            const origOverflow = el.style.overflow;
+            const origMinWidth = el.style.minWidth;
+
             el.style.padding = '100px 30px 60px 30px';
+            el.style.overflow = 'visible';
+            el.style.minWidth = 'max-content';
 
             const bgColors = window.getComputedStyle(document.body).backgroundColor;
 
             // Escala 4x = 400% de calidad!
             const canvas = await html2canvas(el, {
                 backgroundColor: bgColors,
-                scale: 4
+                scale: 4,
+                windowWidth: el.scrollWidth,
+                width: el.scrollWidth
             });
 
             // Limpieza total
             titleLayer.remove();
             el.style.padding = origPadding;
+            el.style.overflow = origOverflow;
+            el.style.minWidth = origMinWidth;
             selects.forEach((s, idx) => {
                 s.style.display = originalDisplays[idx];
             });
