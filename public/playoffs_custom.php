@@ -212,12 +212,23 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
               </select>";
     $html .= "</div>";
 
-    // Encabezados de columnas (IDA / VUELTA)
+    // Cálculo del marcador global
+    $globalH = '';
+    $globalA = '';
+    if ($idaH !== '' && $idaH !== null) {
+        $globalH = (int)$idaH + ($isFinal ? 0 : (int)($vueH ?? 0));
+    }
+    if ($idaA !== '' && $idaA !== null) {
+        $globalA = (int)$idaA + ($isFinal ? 0 : (int)($vueA ?? 0));
+    }
+
+    // Encabezados de columnas (IDA / VUELTA / GLB)
     $html .= "<div style='display:flex; justify-content:flex-end; gap:4px; padding-right:4px; margin-top:-2px; margin-bottom:2px;'>";
     $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>IDA</span>";
     if (!$isFinal) {
         $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>VTA</span>";
     }
+    $html .= "<span style='width:26px; text-align:center; font-size:7px; font-weight:bold; color:var(--btn-bg);'>GLB</span>";
     $html .= "</div>";
 
     // HOME TEAM
@@ -227,6 +238,7 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
     if (!$isFinal) {
         $html .= "<input type='text' name='{$nodeId}_vue_h' value='{$vueH}' class='score-input hue' title='Vuelta' {$rdAttr}>";
     }
+    $html .= "<div class='score-global' title='Marcador Global'>{$globalH}</div>";
     $html .= "</div>";
 
     // AWAY TEAM
@@ -236,6 +248,7 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
     if (!$isFinal) {
         $html .= "<input type='text' name='{$nodeId}_vue_a' value='{$vueA}' class='score-input hue' title='Vuelta' {$rdAttr}>";
     }
+    $html .= "<div class='score-global' title='Marcador Global'>{$globalA}</div>";
     $html .= "</div>";
 
     $html .= "</div>";
@@ -480,6 +493,20 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         .score-input.hue {
             border-color: var(--score-hue-border);
             background: var(--score-hue-bg);
+        }
+
+        .score-global {
+            width: 26px;
+            height: 18px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 800;
+            background: var(--btn-bg);
+            color: #ffffff;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .toast-notification {
