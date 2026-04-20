@@ -222,33 +222,37 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         $globalA = (int)$idaA + ($isFinal ? 0 : (int)($vueA ?? 0));
     }
 
-    // Encabezados de columnas (IDA / VUELTA / GLB)
+    // Encabezados de columnas
     $html .= "<div style='display:flex; justify-content:flex-end; gap:4px; padding-right:4px; margin-top:-2px; margin-bottom:2px;'>";
-    $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>IDA</span>";
     if (!$isFinal) {
+        $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>IDA</span>";
         $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>VTA</span>";
+        $html .= "<span style='width:26px; text-align:center; font-size:7px; font-weight:bold; color:var(--btn-bg);'>GLB</span>";
     }
-    $html .= "<span style='width:26px; text-align:center; font-size:7px; font-weight:bold; color:var(--btn-bg);'>GLB</span>";
     $html .= "</div>";
 
     // HOME TEAM
     $html .= "<div class='team-row'>";
     $html .= "<div class='team-name' title='" . htmlspecialchars($th) . "'>" . htmlspecialchars($th) . "</div>";
-    $html .= "<input type='text' name='{$nodeId}_ida_h' value='{$idaH}' class='score-input' title='Ida' {$rdAttr}>";
-    if (!$isFinal) {
+    if ($isFinal) {
+        $html .= "<input type='text' name='{$nodeId}_ida_h' value='{$idaH}' class='score-input hue' title='Final' {$rdAttr}>";
+    } else {
+        $html .= "<input type='text' name='{$nodeId}_ida_h' value='{$idaH}' class='score-input' title='Ida' {$rdAttr}>";
         $html .= "<input type='text' name='{$nodeId}_vue_h' value='{$vueH}' class='score-input hue' title='Vuelta' {$rdAttr}>";
+        $html .= "<div class='score-global' title='Marcador Global'>{$globalH}</div>";
     }
-    $html .= "<div class='score-global' title='Marcador Global'>{$globalH}</div>";
     $html .= "</div>";
 
     // AWAY TEAM
     $html .= "<div class='team-row'>";
     $html .= "<div class='team-name' title='" . htmlspecialchars($ta) . "'>" . htmlspecialchars($ta) . "</div>";
-    $html .= "<input type='text' name='{$nodeId}_ida_a' value='{$idaA}' class='score-input' title='Ida' {$rdAttr}>";
-    if (!$isFinal) {
+    if ($isFinal) {
+        $html .= "<input type='text' name='{$nodeId}_ida_a' value='{$idaA}' class='score-input hue' title='Final' {$rdAttr}>";
+    } else {
+        $html .= "<input type='text' name='{$nodeId}_ida_a' value='{$idaA}' class='score-input' title='Ida' {$rdAttr}>";
         $html .= "<input type='text' name='{$nodeId}_vue_a' value='{$vueA}' class='score-input hue' title='Vuelta' {$rdAttr}>";
+        $html .= "<div class='score-global' title='Marcador Global'>{$globalA}</div>";
     }
-    $html .= "<div class='score-global' title='Marcador Global'>{$globalA}</div>";
     $html .= "</div>";
 
     $html .= "</div>";
