@@ -1,5 +1,7 @@
 .env
 storage/logs/*.log
+storage/*.txt
+storage/*.json
 public/assets/img/uploads/
 .DS_Store
 *.DS_Store
