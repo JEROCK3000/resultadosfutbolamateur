@@ -596,9 +596,36 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
 
             <!-- CENTRO: FINAL -->
             <div class="col" style="justify-content:center;">
-                <div
-                    style="text-align:center; font-size:3.5rem; height:60px; line-height:60px; animation: bounce 2s infinite; text-shadow: 0 10px 20px rgba(251, 191, 36, 0.2);">
-                    🏆</div>
+                <div style="text-align:center; height:80px; margin-bottom:15px; animation: bounce 3s infinite;">
+                    <svg width="80" height="80" viewBox="0 0 100 100" style="filter: drop-shadow(0px 10px 15px rgba(251, 191, 36, 0.4));">
+                      <defs>
+                        <linearGradient id="gold-lg" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#FDE68A" />
+                          <stop offset="50%" stop-color="#F59E0B" />
+                          <stop offset="100%" stop-color="#92400E" />
+                        </linearGradient>
+                        <linearGradient id="gold-bright" x1="0%" y1="100%" x2="100%" y2="0%">
+                          <stop offset="0%" stop-color="#FEF3C7" />
+                          <stop offset="50%" stop-color="#F59E0B" />
+                          <stop offset="100%" stop-color="#B45309" />
+                        </linearGradient>
+                      </defs>
+                      <!-- Asas -->
+                      <path d="M25 30 C 0 20 0 65 30 60" fill="none" stroke="url(#gold-lg)" stroke-width="7" stroke-linecap="round"/>
+                      <path d="M75 30 C 100 20 100 65 70 60" fill="none" stroke="url(#gold-lg)" stroke-width="7" stroke-linecap="round"/>
+                      <!-- Soporte Base -->
+                      <path d="M45 75 L 55 75 L 62 90 L 38 90 Z" fill="url(#gold-bright)" />
+                      <!-- Base Negra -->
+                      <rect x="30" y="90" width="40" height="8" rx="2" fill="#1F2937" />
+                      <!-- Cuerpo de Copa -->
+                      <path d="M18 20 L 82 20 C 82 65 65 75 50 75 C 35 75 18 65 18 20 Z" fill="url(#gold-lg)" />
+                      <!-- Borde Superior -->
+                      <ellipse cx="50" cy="20" rx="32" ry="7" fill="url(#gold-bright)" />
+                      <ellipse cx="50" cy="20" rx="26" ry="3" fill="#FFFBFB" opacity="0.8"/>
+                      <!-- Estrella / Brillo -->
+                      <path d="M 50 32 L 53 39 L 60 39 L 54 44 L 56 50 L 50 47 L 44 50 L 46 44 L 40 39 L 47 39 Z" fill="#FFFFFF" opacity="0.5"/>
+                    </svg>
+                </div>
                 <?= renderMatchBox('F1', "👑 GRAN FINAL", true, 'line-in-left line-in-right') ?>
                 <div style="height:60px;"></div>
             </div>
