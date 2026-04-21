@@ -223,13 +223,19 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
     }
 
     // Encabezados de columnas
-    $html .= "<div style='display:flex; justify-content:flex-end; gap:4px; padding-right:4px; margin-top:-2px; margin-bottom:2px;'>";
-    if (!$isFinal) {
+    $marginStyle = "margin-top:-2px; margin-bottom:2px;";
+    if ($isFinal) {
+        // En la final añadimos la misma caja pero invisible para no perder la altura y que las líneas cuadren
+        $html .= "<div style='display:flex; justify-content:flex-end; gap:4px; padding-right:4px; {$marginStyle} visibility:hidden;'>";
+        $html .= "<span style='width:24px; font-size:7px;'>IDA</span>";
+        $html .= "</div>";
+    } else {
+        $html .= "<div style='display:flex; justify-content:flex-end; gap:4px; padding-right:4px; {$marginStyle}'>";
         $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>IDA</span>";
         $html .= "<span style='width:24px; text-align:center; font-size:7px; font-weight:bold; color:var(--title);'>VTA</span>";
         $html .= "<span style='width:26px; text-align:center; font-size:7px; font-weight:bold; color:var(--btn-bg);'>GLB</span>";
+        $html .= "</div>";
     }
-    $html .= "</div>";
 
     // HOME TEAM
     $html .= "<div class='team-row'>";
