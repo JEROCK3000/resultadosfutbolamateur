@@ -596,12 +596,8 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
 
             <!-- CENTRO: FINAL -->
             <div class="col" style="justify-content:center;">
-                <div style="text-align:center; height:60px; margin-bottom:20px; display:flex; align-items:flex-end; justify-content:center;">
-                    <div style="display:inline-block; border-top: 2px solid #D4AF37; border-bottom: 2px solid #D4AF37; padding: 10px 40px; background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.15), transparent);">
-                        <span style="font-family: 'Inter', 'Arial', sans-serif; color: #D4AF37; font-size: 24px; font-weight: 900; letter-spacing: 8px; text-transform: uppercase; text-shadow: 0 4px 8px rgba(0,0,0,0.15);">
-                            CAMPEÓN
-                        </span>
-                    </div>
+                <div style="text-align:center; height:100px; margin-bottom:20px; display:flex; align-items:flex-end; justify-content:center; animation: bounce 3s infinite;">
+                    <img src="assets/img/trophy.png" alt="Trofeo" style="max-height: 100px; filter: drop-shadow(0 10px 15px rgba(212, 175, 55, 0.4));" />
                 </div>
                 <?= renderMatchBox('F1', "👑 GRAN FINAL", true, 'line-in-left line-in-right') ?>
                 <div style="height:60px;"></div>
