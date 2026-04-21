@@ -596,7 +596,7 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
             <!-- IZQUIERDA: SEMIS -->
             <div class="col">
                 <div class="match-pair">
-                    <?= renderMatchBox('S1', "Semifinal - S1", false, 'line-in-left line-out-straight-left') ?>
+                    <?= renderMatchBox('S1', "SEMIFINAL - S1", false, 'line-in-left line-out-straight-left') ?>
                 </div>
             </div>
 
@@ -606,13 +606,13 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
                     <img src="<?= BASE_URL ?>/assets/img/trophy.png" alt="Trofeo" style="max-height: 100px; filter: drop-shadow(0 10px 15px rgba(212, 175, 55, 0.4));" />
                 </div>
                 <?= renderMatchBox('F1', "👑 GRAN FINAL", true, 'line-in-left line-in-right') ?>
-                <div style="height:60px;"></div>
+                <div style="height:120px;"></div>
             </div>
 
             <!-- DERECHA: SEMIS -->
             <div class="col">
                 <div class="match-pair">
-                    <?= renderMatchBox('S2', "Semifinal - S2", false, 'line-in-right line-out-straight-right') ?>
+                    <?= renderMatchBox('S2', "SEMIFINAL - S2", false, 'line-in-right line-out-straight-right') ?>
                 </div>
             </div>
 
