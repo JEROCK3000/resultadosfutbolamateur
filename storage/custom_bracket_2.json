@@ -14,17 +14,17 @@
         "override": ""
     },
     "O3": {
-        "ida_h": "",
-        "ida_a": "",
-        "vue_h": "",
-        "vue_a": "",
+        "ida_h": "3",
+        "ida_a": "1",
+        "vue_h": "3",
+        "vue_a": "1",
         "override": ""
     },
     "O4": {
-        "ida_h": "",
-        "ida_a": "",
-        "vue_h": "",
-        "vue_a": "",
+        "ida_h": "2",
+        "ida_a": "3",
+        "vue_h": "3",
+        "vue_a": "3",
         "override": ""
     },
     "O5": {

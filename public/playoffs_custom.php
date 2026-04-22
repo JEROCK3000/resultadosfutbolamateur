@@ -479,12 +479,13 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         }
 
         .team-name {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
             flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            overflow: visible;
+            word-break: break-word;
+            line-height: 1.2;
             letter-spacing: -0.3px;
         }
 
