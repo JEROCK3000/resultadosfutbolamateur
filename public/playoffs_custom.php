@@ -74,6 +74,12 @@ $nodes = [
 $file_path    = BASE_PATH . "/storage/custom_bracket_{$league_id}.json";
 $counter_path = BASE_PATH . "/storage/playoffs_visits_{$league_id}.txt";
 $db           = Database::getInstance();
+$db->exec("CREATE TABLE IF NOT EXISTS app_data (
+    \`key\`     VARCHAR(255) NOT NULL,
+    \`value\`   LONGTEXT,
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (\`key\`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 $data_key     = "bracket_{$league_id}";
 $visits_key   = "bracket_visits_{$league_id}";
 
