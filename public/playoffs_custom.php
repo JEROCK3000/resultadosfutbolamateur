@@ -71,41 +71,56 @@ $nodes = [
     'F1'                                            // Final
 ];
 
-$file_path = BASE_PATH . "/storage/custom_bracket_{$league_id}.json";
+$file_path    = BASE_PATH . "/storage/custom_bracket_{$league_id}.json";
 $counter_path = BASE_PATH . "/storage/playoffs_visits_{$league_id}.txt";
+$db           = Database::getInstance();
+$data_key     = "bracket_{$league_id}";
+$visits_key   = "bracket_visits_{$league_id}";
 
-// Lógica del contador de visitas (Solo incrementa al cargar normal por GET)
+// Contador de visitas en BD
 $visits = 0;
-if (file_exists($counter_path)) {
-    $visits = (int)file_get_contents($counter_path);
-}
+$stmt = $db->prepare("SELECT `value` FROM app_data WHERE `key` = ?");
+$stmt->execute([$visits_key]);
+$vrow = $stmt->fetch(PDO::FETCH_ASSOC);
+$visits = $vrow ? (int)$vrow['value'] : 0;
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $visits++;
-    @file_put_contents($counter_path, (string)$visits);
+    $db->prepare("REPLACE INTO app_data (`key`, `value`) VALUES (?, ?)")->execute([$visits_key, $visits]);
 }
 
-// Guardar resultados si se hace POST
+// Guardar resultados si se hace POST — persiste en BD (no en archivo)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$isAdmin) die("Acceso denegado.");
     $data = [];
     foreach ($nodes as $n) {
         $data[$n] = [
-            'ida_h' => $_POST["{$n}_ida_h"] ?? '',
-            'ida_a' => $_POST["{$n}_ida_a"] ?? '',
-            'vue_h' => $_POST["{$n}_vue_h"] ?? '',
-            'vue_a' => $_POST["{$n}_vue_a"] ?? '',
+            'ida_h'    => $_POST["{$n}_ida_h"]    ?? '',
+            'ida_a'    => $_POST["{$n}_ida_a"]    ?? '',
+            'vue_h'    => $_POST["{$n}_vue_h"]    ?? '',
+            'vue_a'    => $_POST["{$n}_vue_a"]    ?? '',
             'override' => $_POST["{$n}_override"] ?? ''
         ];
     }
-    @file_put_contents($file_path, json_encode($data, JSON_PRETTY_PRINT));
+    $db->prepare("REPLACE INTO app_data (`key`, `value`) VALUES (?, ?)")
+       ->execute([$data_key, json_encode($data, JSON_PRETTY_PRINT)]);
     header("Location: playoffs_custom.php?league_id={$league_id}&saved=1");
     exit;
 }
 
-// Cargar estado
+// Cargar estado desde BD (con migración automática desde archivo si existe)
 $state = [];
-if (file_exists($file_path)) {
+$stmt = $db->prepare("SELECT `value` FROM app_data WHERE `key` = ?");
+$stmt->execute([$data_key]);
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($row) {
+    $state = json_decode($row['value'], true) ?: [];
+} elseif (file_exists($file_path)) {
+    // Primera vez: migrar datos del archivo a la BD
     $state = json_decode(file_get_contents($file_path), true) ?: [];
+    if (!empty($state)) {
+        $db->prepare("REPLACE INTO app_data (`key`, `value`) VALUES (?, ?)")
+           ->execute([$data_key, json_encode($state, JSON_PRETTY_PRINT)]);
+    }
 }
 
 /** Calcula el ganador basado en goles o desempate manual */
@@ -271,7 +286,8 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
 
 <head>
     <meta charset="UTF-8">
-    <title>Generador Temporal de Llaves</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Llaves Fase Final 2026</title>
     <style>
         :root {
             --bg: #eef2f5;
@@ -546,6 +562,35 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
             50% {
                 transform: translateY(-8px);
             }
+        }
+
+        /* ── Responsive móvil ─────────────────────────── */
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+
+            .header h1 { font-size: 1rem; }
+            .header h3 { font-size: 0.8rem; }
+            .header p  { font-size: 0.75rem; }
+
+            .header > div { gap: 8px; }
+            .btn { padding: 8px 14px; font-size: 11px; }
+
+            .theme-toggle {
+                position: static;
+                display: block;
+                margin: 0 auto 10px;
+                font-size: 11px;
+                padding: 6px 12px;
+            }
+
+            /* El bracket hace scroll horizontal — no escalar */
+            .bracket-container {
+                padding: 20px 0 40px;
+                gap: 16px;
+                justify-content: flex-start;
+            }
+
+            .col { width: 190px; }
         }
     </style>
 </head>

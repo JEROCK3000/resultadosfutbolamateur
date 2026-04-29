@@ -40,7 +40,7 @@ class MatchController extends Controller
         $this->view('layouts/app', ['pageTitle' => 'Encuentros', 'content' => $content]);
     }
 
-    /** GET /encuentros/liga/{id} — Encuentros de una Campeonato específica */
+    /** GET /encuentros/liga/{id} — Encuentros de un Campeonato, agrupados por vuelta y fecha */
     public function show(string $leagueId): void
     {
         $id = (int)$leagueId;
@@ -51,6 +51,21 @@ class MatchController extends Controller
         }
 
         $matches = $this->model->getByLeague($id);
+
+        // Agrupar por vuelta → round_number
+        $grouped = [];
+        foreach ($matches as $m) {
+            $vuelta = (int)($m['vuelta'] ?? 1);
+            $round  = (int)($m['round_number'] ?? 0);
+            $grouped[$vuelta][$round][] = $m;
+        }
+        ksort($grouped);
+        foreach ($grouped as &$rounds) ksort($rounds);
+        unset($rounds);
+
+        // Calcular cuántos rounds tiene la primera vuelta (para numerar localmente la segunda)
+        $firstVueltaRoundCount = isset($grouped[1]) ? count($grouped[1]) : 0;
+
         ob_start();
         require BASE_PATH . '/app/Views/matches/index.php';
         $content = ob_get_clean();

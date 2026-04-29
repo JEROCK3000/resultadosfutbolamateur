@@ -82,9 +82,10 @@ $router->get('/calendario/generar/{id}',     'ScheduleController@create');
 $router->post('/calendario/generar/{id}',    'ScheduleController@store');
 
 // ── Sorteo Semanal Logístico ──
-$router->get('/programacion',                'WeeklyScheduleController@index');
-$router->get('/programacion/{league_id}',    'WeeklyScheduleController@show');
-$router->post('/programacion/{league_id}',   'WeeklyScheduleController@store');
+$router->get('/programacion',                                              'WeeklyScheduleController@index');
+$router->get('/programacion/{league_id}',                                  'WeeklyScheduleController@show');
+$router->post('/programacion/{league_id}',                                 'WeeklyScheduleController@store');
+$router->post('/programacion/{league_id}/partido/{id}/actualizar',         'WeeklyScheduleController@updateMatch');
 
 // ── Encuentros ──
 $router->get('/encuentros',                  'MatchController@index');

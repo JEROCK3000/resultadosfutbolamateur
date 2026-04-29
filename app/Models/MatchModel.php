@@ -232,9 +232,9 @@ class MatchModel extends Model
     {
         $stmt = $this->db->prepare("
             INSERT INTO matches
-              (league_id, home_team_id, away_team_id, stadium_id, referee_id, match_date, match_time, status, round_number, created_at, updated_at)
+              (league_id, home_team_id, away_team_id, stadium_id, referee_id, match_date, match_time, status, round_number, vuelta, created_at, updated_at)
             VALUES
-              (:league_id, :home_team_id, :away_team_id, :stadium_id, :referee_id, :match_date, :match_time, :status, :round_number, NOW(), NOW())
+              (:league_id, :home_team_id, :away_team_id, :stadium_id, :referee_id, :match_date, :match_time, :status, :round_number, :vuelta, NOW(), NOW())
         ");
         return $stmt->execute([
             ':league_id'    => $data['league_id'],
@@ -246,7 +246,24 @@ class MatchModel extends Model
             ':match_time'   => !empty($data['match_time']) ? $data['match_time'] : null,
             ':status'       => !empty($data['status']) ? $data['status'] : 'unscheduled',
             ':round_number' => !empty($data['round_number']) ? $data['round_number'] : null,
+            ':vuelta'       => !empty($data['vuelta']) ? (int)$data['vuelta'] : 1,
         ]);
+    }
+
+    /** Cuenta cuántos partidos tiene una liga (para saber si ya tiene fixture generado). */
+    public function countByLeague(int $leagueId): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM matches WHERE league_id = :lid");
+        $stmt->execute([':lid' => $leagueId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /** Elimina todos los partidos de una liga. Retorna la cantidad eliminada. */
+    public function deleteAllByLeague(int $leagueId): int
+    {
+        $stmt = $this->db->prepare("DELETE FROM matches WHERE league_id = :lid");
+        $stmt->execute([':lid' => $leagueId]);
+        return $stmt->rowCount();
     }
 
     public function update(int $id, array $data): bool
@@ -282,5 +299,110 @@ class MatchModel extends Model
     public function getLastInsertId(): int
     {
         return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Historial de slots (día_semana + hora) por equipo en una liga.
+     * Incluye partidos programados y finalizados para tener memoria completa.
+     * Retorna: [team_id => ['6_10:00' => 2, '0_14:00' => 1, ...], ...]
+     */
+    public function getTeamSlotHistory(int $leagueId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT home_team_id AS team_id, match_date, match_time FROM matches
+            WHERE league_id = :lid
+              AND status IN ('scheduled', 'finished')
+              AND match_date IS NOT NULL AND match_time IS NOT NULL
+            UNION ALL
+            SELECT away_team_id, match_date, match_time FROM matches
+            WHERE league_id = :lid2
+              AND status IN ('scheduled', 'finished')
+              AND match_date IS NOT NULL AND match_time IS NOT NULL
+        ");
+        $stmt->execute([':lid' => $leagueId, ':lid2' => $leagueId]);
+
+        $history = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $dow  = (int)(new \DateTime($row['match_date']))->format('w');
+            $time = substr($row['match_time'], 0, 5);
+            $key  = $dow . '_' . $time;
+            $tid  = (int)$row['team_id'];
+            $history[$tid][$key] = ($history[$tid][$key] ?? 0) + 1;
+        }
+        return $history;
+    }
+
+    /**
+     * Fechas ya ocupadas por equipo (para evitar doble partido el mismo día).
+     * Retorna: [team_id => ['2026-01-10' => true, ...], ...]
+     */
+    public function getTeamOccupiedDates(int $leagueId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT home_team_id AS team_id, match_date FROM matches
+            WHERE league_id = :lid
+              AND status IN ('scheduled', 'finished')
+              AND match_date IS NOT NULL
+            UNION ALL
+            SELECT away_team_id, match_date FROM matches
+            WHERE league_id = :lid2
+              AND status IN ('scheduled', 'finished')
+              AND match_date IS NOT NULL
+        ");
+        $stmt->execute([':lid' => $leagueId, ':lid2' => $leagueId]);
+
+        $occupied = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $occupied[(int)$row['team_id']][$row['match_date']] = true;
+        }
+        return $occupied;
+    }
+
+    /**
+     * Slots de estadio ya reservados globalmente — claves "{stadium_id}_{date}_{time}".
+     * La clave uq_stadium_slot es global (no por liga), por lo que se deben excluir
+     * todos los slots ocupados en cualquier liga.
+     */
+    public function getOccupiedStadiumSlots(int $leagueId): array
+    {
+        $stmt = $this->db->query("
+            SELECT stadium_id, match_date, match_time FROM matches
+            WHERE status IN ('scheduled', 'finished')
+              AND stadium_id IS NOT NULL AND match_date IS NOT NULL
+        ");
+
+        $slots = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $time = substr($row['match_time'], 0, 5);
+            $key  = $row['stadium_id'] . '_' . $row['match_date'] . '_' . $time;
+            $slots[$key] = true;
+        }
+        return $slots;
+    }
+
+    /**
+     * Historial de slots (día_semana + hora) por árbitro en una liga.
+     * Retorna: [referee_id => ['6_10:00' => 3, '0_14:00' => 1, ...], ...]
+     */
+    public function getRefereeSlotHistory(int $leagueId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT referee_id, match_date, match_time FROM matches
+            WHERE league_id = :lid
+              AND status IN ('scheduled', 'finished')
+              AND referee_id IS NOT NULL
+              AND match_date IS NOT NULL AND match_time IS NOT NULL
+        ");
+        $stmt->execute([':lid' => $leagueId]);
+
+        $history = [];
+        while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+            $dow  = (int)(new \DateTime($row['match_date']))->format('w');
+            $time = substr($row['match_time'], 0, 5);
+            $key  = $dow . '_' . $time;
+            $rid  = (int)$row['referee_id'];
+            $history[$rid][$key] = ($history[$rid][$key] ?? 0) + 1;
+        }
+        return $history;
     }
 }
