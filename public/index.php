@@ -149,6 +149,29 @@ $router->post('/usuarios/eliminar/{id}',   'UserController@destroy');
 // ── Auditoría (solo admin) ──
 $router->get('/auditoria', 'AuditController@index');
 
+// ── Inscripciones ──
+$router->get('/inscripciones',              'RegistrationController@index');
+$router->get('/inscripciones/solicitar',    'RegistrationController@create');
+$router->post('/inscripciones/solicitar',   'RegistrationController@store');
+$router->post('/inscripciones/aprobar/{id}','RegistrationController@approve');
+$router->post('/inscripciones/rechazar/{id}','RegistrationController@reject');
+
+// ── Pases / Transferencias ──
+$router->get('/pases',                      'TransferController@index');
+$router->post('/pases/ventana/guardar',     'TransferController@storeWindow');
+$router->post('/pases/ventana/cerrar/{id}', 'TransferController@closeWindow');
+$router->get('/pases/solicitar',            'TransferController@create');
+$router->post('/pases/solicitar',           'TransferController@store');
+$router->post('/pases/aprobar/{id}',        'TransferController@approve');
+$router->post('/pases/rechazar/{id}',       'TransferController@reject');
+
+// ── Sanciones y Estadísticas ──
+$router->get('/sanciones',                  'SanctionController@index');
+$router->post('/sanciones/crear',           'SanctionController@store');
+$router->post('/sanciones/pagar/{id}',      'SanctionController@payFine');
+$router->post('/sanciones/cumplir/{id}',    'SanctionController@serve');
+$router->post('/sanciones/anular/{id}',     'SanctionController@deactivate');
+
 // ── Exportaciones ──
 $router->get('/exportar/posiciones/pdf/{league_id}',    'ExportController@standingsPdf');
 $router->get('/exportar/posiciones/excel/{league_id}',  'ExportController@standingsExcel');

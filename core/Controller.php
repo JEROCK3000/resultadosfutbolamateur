@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Controller.php — Clase base de todos los controladores
- * Provee métodos para cargar vistas, redirigir y controlar acceso.
- */
 abstract class Controller
 {
     protected function view(string $view, array $data = []): void
@@ -32,7 +28,6 @@ abstract class Controller
         }
     }
 
-    /** Requiere sesión activa. Redirige al login si no existe. */
     protected function requireAuth(): void
     {
         if (empty($_SESSION['user_id'])) {
@@ -41,33 +36,54 @@ abstract class Controller
         }
     }
 
-    /** Requiere rol específico. Admin siempre tiene acceso. */
-    protected function requireRole(string $role): void
+    /** Requiere uno de los roles dados (admin siempre pasa). */
+    protected function requireRole(string ...$roles): void
     {
         $this->requireAuth();
-        if ($_SESSION['user_role'] !== $role && $_SESSION['user_role'] !== 'admin') {
-            $this->setFlash('danger', 'No tienes permiso para acceder a esta sección.');
-            $this->redirect('/');
+        $userRole = $_SESSION['user_role'] ?? '';
+        if ($userRole === 'admin') return;
+        foreach ($roles as $role) {
+            if ($userRole === $role) return;
         }
+        $this->setFlash('danger', 'No tienes permiso para acceder a esta sección.');
+        $this->redirect('/');
     }
 
-    /** Devuelve datos del usuario actualmente en sesión. */
     protected function currentUser(): array
     {
         return [
-            'id'     => (int) ($_SESSION['user_id']    ?? 0),
-            'name'   => $_SESSION['user_name']          ?? '',
-            'email'  => $_SESSION['user_email']         ?? '',
-            'role'   => $_SESSION['user_role']          ?? '',
-            'league' => $_SESSION['user_league']        ?? null,
+            'id'       => (int) ($_SESSION['user_id']      ?? 0),
+            'name'     => $_SESSION['user_name']            ?? '',
+            'email'    => $_SESSION['user_email']           ?? '',
+            'role'     => $_SESSION['user_role']            ?? '',
+            'league'   => $_SESSION['user_league']          ?? null,
+            'team_id'  => (int) ($_SESSION['user_team_id'] ?? 0),
         ];
     }
 
-    /** Admin gestiona todas las ligas; registrador solo la suya. */
+    protected function isAdmin(): bool
+    {
+        return ($_SESSION['user_role'] ?? '') === 'admin';
+    }
+
+    protected function isTeamManager(): bool
+    {
+        return ($_SESSION['user_role'] ?? '') === 'team_manager';
+    }
+
     protected function canManageLeague(int $leagueId): bool
     {
-        if (($_SESSION['user_role'] ?? '') === 'admin') return true;
+        if ($this->isAdmin()) return true;
         return (int) ($_SESSION['user_league'] ?? 0) === $leagueId;
+    }
+
+    /** Bloquea al team_manager si intenta acceder a un equipo que no es el suyo. */
+    protected function guardTeamAccess(int $teamId): void
+    {
+        if ($this->isTeamManager() && (int)($_SESSION['user_team_id'] ?? 0) !== $teamId) {
+            $this->setFlash('danger', 'Solo puedes gestionar tu propio equipo.');
+            $this->redirect('/jugadores');
+        }
     }
 
     protected function setFlash(string $type, string $message): void

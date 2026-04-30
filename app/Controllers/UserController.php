@@ -4,20 +4,20 @@ declare(strict_types=1);
 require_once BASE_PATH . '/core/Controller.php';
 require_once BASE_PATH . '/app/Models/UserModel.php';
 require_once BASE_PATH . '/app/Models/LeagueModel.php';
+require_once BASE_PATH . '/app/Models/TeamModel.php';
 require_once BASE_PATH . '/app/Models/AuditModel.php';
 
-/**
- * UserController.php — Gestión de usuarios (solo admin)
- */
 class UserController extends Controller
 {
     private UserModel  $model;
     private LeagueModel $leagueModel;
+    private TeamModel   $teamModel;
 
     public function __construct()
     {
         $this->model       = new UserModel();
         $this->leagueModel = new LeagueModel();
+        $this->teamModel   = new TeamModel();
     }
 
     public function index(): void
@@ -34,6 +34,7 @@ class UserController extends Controller
     {
         $this->requireRole('admin');
         $leagues = $this->leagueModel->getAll();
+        $teams   = $this->teamModel->getAll();
         ob_start();
         require BASE_PATH . '/app/Views/users/create.php';
         $content = ob_get_clean();
@@ -48,27 +49,27 @@ class UserController extends Controller
         $name      = trim(filter_input(INPUT_POST, 'name',     FILTER_SANITIZE_SPECIAL_CHARS) ?? '');
         $email     = trim(filter_input(INPUT_POST, 'email',    FILTER_SANITIZE_EMAIL) ?? '');
         $password  = trim($_POST['password'] ?? '');
-        $role      = in_array($_POST['role'] ?? '', ['admin','registrador']) ? $_POST['role'] : 'registrador';
+        $role      = in_array($_POST['role'] ?? '', ['admin','registrador','team_manager']) ? $_POST['role'] : 'registrador';
         $league_id = filter_input(INPUT_POST, 'league_id', FILTER_VALIDATE_INT) ?: null;
-        $status    = 'active';
+        $team_id   = filter_input(INPUT_POST, 'team_id',   FILTER_VALIDATE_INT) ?: null;
+
+        if ($role !== 'team_manager') $team_id = null;
+        if ($role === 'admin')        $league_id = null;
 
         if (empty($name) || empty($email) || empty($password)) {
             $this->setFlash('danger', 'Nombre, correo y contraseña son obligatorios.');
-            $this->redirect('/usuarios/crear');
-            return;
+            $this->redirect('/usuarios/crear'); return;
         }
         if (strlen($password) < 8) {
             $this->setFlash('danger', 'La contraseña debe tener al menos 8 caracteres.');
-            $this->redirect('/usuarios/crear');
-            return;
+            $this->redirect('/usuarios/crear'); return;
         }
         if ($this->model->emailExists($email)) {
             $this->setFlash('danger', "El correo {$email} ya está registrado.");
-            $this->redirect('/usuarios/crear');
-            return;
+            $this->redirect('/usuarios/crear'); return;
         }
 
-        $created = $this->model->create(compact('name','email','password','role','league_id','status'));
+        $created = $this->model->create(compact('name','email','password','role','league_id','team_id') + ['status'=>'active']);
         if ($created) {
             $user = $this->currentUser();
             AuditModel::log($user['id'], 'create', "Usuario creado: {$name} ({$email}) — Rol: {$role}", 'Usuario');
@@ -85,6 +86,7 @@ class UserController extends Controller
         $userEdit = $this->model->getById((int) $id);
         if (!$userEdit) { $this->setFlash('danger','Usuario no encontrado.'); $this->redirect('/usuarios'); return; }
         $leagues = $this->leagueModel->getAll();
+        $teams   = $this->teamModel->getAll();
         ob_start();
         require BASE_PATH . '/app/Views/users/edit.php';
         $content = ob_get_clean();
@@ -100,27 +102,28 @@ class UserController extends Controller
         $name      = trim(filter_input(INPUT_POST, 'name',  FILTER_SANITIZE_SPECIAL_CHARS) ?? '');
         $email     = trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?? '');
         $password  = trim($_POST['password'] ?? '');
-        $role      = in_array($_POST['role'] ?? '', ['admin','registrador']) ? $_POST['role'] : 'registrador';
+        $role      = in_array($_POST['role'] ?? '', ['admin','registrador','team_manager']) ? $_POST['role'] : 'registrador';
         $league_id = filter_input(INPUT_POST, 'league_id', FILTER_VALIDATE_INT) ?: null;
+        $team_id   = filter_input(INPUT_POST, 'team_id',   FILTER_VALIDATE_INT) ?: null;
         $status    = in_array($_POST['status'] ?? '', ['active','inactive']) ? $_POST['status'] : 'active';
+
+        if ($role !== 'team_manager') $team_id = null;
+        if ($role === 'admin')        $league_id = null;
 
         if (empty($name) || empty($email)) {
             $this->setFlash('danger', 'Nombre y correo son obligatorios.');
-            $this->redirect("/usuarios/editar/{$id}");
-            return;
+            $this->redirect("/usuarios/editar/{$id}"); return;
         }
         if (!empty($password) && strlen($password) < 8) {
             $this->setFlash('danger', 'La contraseña debe tener al menos 8 caracteres.');
-            $this->redirect("/usuarios/editar/{$id}");
-            return;
+            $this->redirect("/usuarios/editar/{$id}"); return;
         }
         if ($this->model->emailExists($email, $id)) {
             $this->setFlash('danger', "El correo {$email} ya está en uso por otro usuario.");
-            $this->redirect("/usuarios/editar/{$id}");
-            return;
+            $this->redirect("/usuarios/editar/{$id}"); return;
         }
 
-        $updated = $this->model->update($id, compact('name','email','password','role','league_id','status'));
+        $updated = $this->model->update($id, compact('name','email','password','role','league_id','team_id','status'));
         if ($updated) {
             $user = $this->currentUser();
             AuditModel::log($user['id'], 'update', "Usuario actualizado: {$name} ({$email})", 'Usuario', $id);
@@ -137,11 +140,9 @@ class UserController extends Controller
         $this->requireMethod('POST');
         $id = (int) $id;
 
-        // No puede eliminarse a sí mismo
         if ($id === $this->currentUser()['id']) {
             $this->setFlash('danger', 'No puedes eliminarte a ti mismo.');
-            $this->redirect('/usuarios');
-            return;
+            $this->redirect('/usuarios'); return;
         }
 
         $u = $this->model->getById($id);
