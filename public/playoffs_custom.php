@@ -740,58 +740,73 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         // Lógica de exportación
         async function getCanvas() {
             const el = document.querySelector('.bracket-container');
-            el.style.position = 'relative';
 
-            // 1. Agregar Título Oficial Dinámico
-            const titleLayer = document.createElement('div');
-            titleLayer.style.position = 'absolute';
-            titleLayer.style.top = '15px';
-            titleLayer.style.left = '50%';
-            titleLayer.style.transform = 'translateX(-50%)';
-            titleLayer.style.textAlign = 'center';
-            titleLayer.style.width = '100%';
-            titleLayer.style.zIndex = '5';
-            titleLayer.innerHTML = `
-                <h2 style="margin:0; font-family:'Arial', sans-serif; color:var(--text); font-size:24px; text-transform:uppercase; letter-spacing:2px; font-weight:800; text-shadow:0 2px 10px rgba(0,0,0,0.1);">FASE FINAL CAMPEONATO 2026</h2>
-                <h3 style="margin:8px 0 0; font-family:'Arial', sans-serif; color:var(--title); font-size:15px; letter-spacing:1px; font-weight:600;">LIGA DEPORTIVA PARROQUIAL SAN FRANCISCO DE BORJA</h3>
-            `;
-            el.appendChild(titleLayer);
+            // Guardar estilos originales
+            const orig = {
+                position:  el.style.position,
+                padding:   el.style.padding,
+                overflow:  el.style.overflow,
+                minWidth:  el.style.minWidth,
+                width:     el.style.width,
+            };
+            const origBodyOverflow  = document.body.style.overflow;
+            const origBodyMinWidth  = document.body.style.minWidth;
 
-            // Ocultar temporalmente los selects de desempate
+            // Ocultar temporalmente los selects en Auto
             const selects = el.querySelectorAll('select');
-            const originalDisplays = [];
+            const origDisplays = [];
             selects.forEach(s => {
-                originalDisplays.push(s.style.display);
+                origDisplays.push(s.style.display);
                 if (s.value === '') s.style.display = 'none';
             });
 
-            // Expandir los bordes temporales para que quepa todo el texto hermoso
-            const origPadding = el.style.padding;
-            const origOverflow = el.style.overflow;
-            const origMinWidth = el.style.minWidth;
+            // Expandir el contenedor Y el body para que html2canvas vea todo el ancho
+            el.style.position  = 'relative';
+            el.style.padding   = '100px 30px 60px 30px';
+            el.style.overflow  = 'visible';
+            el.style.minWidth  = 'max-content';
+            el.style.width     = 'max-content';
+            document.body.style.overflow  = 'visible';
+            document.body.style.minWidth  = (el.scrollWidth + 80) + 'px';
 
-            el.style.padding = '100px 30px 60px 30px';
-            el.style.overflow = 'visible';
-            el.style.minWidth = 'max-content';
+            // Agregar título
+            const titleLayer = document.createElement('div');
+            titleLayer.style.cssText = 'position:absolute;top:15px;left:50%;transform:translateX(-50%);text-align:center;width:100%;z-index:5;pointer-events:none';
+            titleLayer.innerHTML = `
+                <h2 style="margin:0;font-family:'Arial',sans-serif;color:var(--text);font-size:24px;text-transform:uppercase;letter-spacing:2px;font-weight:800;">FASE FINAL CAMPEONATO 2026</h2>
+                <h3 style="margin:8px 0 0;font-family:'Arial',sans-serif;color:var(--title);font-size:15px;letter-spacing:1px;font-weight:600;">LIGA DEPORTIVA PARROQUIAL SAN FRANCISCO DE BORJA</h3>
+            `;
+            el.appendChild(titleLayer);
 
-            const bgColors = window.getComputedStyle(document.body).backgroundColor;
+            // Esperar reflow completo antes de capturar
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-            // Escala 4x = 400% de calidad!
+            const captureWidth  = el.scrollWidth;
+            const captureHeight = el.scrollHeight;
+            const bgColor = window.getComputedStyle(document.body).backgroundColor;
+
             const canvas = await html2canvas(el, {
-                backgroundColor: bgColors,
-                scale: 4,
-                windowWidth: el.scrollWidth,
-                width: el.scrollWidth
+                backgroundColor: bgColor,
+                scale:           4,
+                useCORS:         true,
+                windowWidth:     captureWidth  + 80,
+                windowHeight:    captureHeight + 80,
+                width:           captureWidth,
+                height:          captureHeight,
+                scrollX:         0,
+                scrollY:         -window.scrollY,
             });
 
-            // Limpieza total
+            // Restaurar todo
             titleLayer.remove();
-            el.style.padding = origPadding;
-            el.style.overflow = origOverflow;
-            el.style.minWidth = origMinWidth;
-            selects.forEach((s, idx) => {
-                s.style.display = originalDisplays[idx];
-            });
+            el.style.position  = orig.position;
+            el.style.padding   = orig.padding;
+            el.style.overflow  = orig.overflow;
+            el.style.minWidth  = orig.minWidth;
+            el.style.width     = orig.width;
+            document.body.style.overflow  = origBodyOverflow;
+            document.body.style.minWidth  = origBodyMinWidth;
+            selects.forEach((s, i) => { s.style.display = origDisplays[i]; });
 
             return canvas;
         }
