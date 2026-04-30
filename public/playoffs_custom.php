@@ -742,8 +742,9 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
             const el = document.querySelector('.bracket-container');
 
             // Leer el ancho real del contenido (scrollWidth funciona aunque overflow esté en auto)
-            const fullW = el.scrollWidth;
-            const fullH = el.scrollHeight + 220; // espacio para el título
+            const sidePad = 80;
+            const fullW = el.scrollWidth + sidePad * 2;
+            const fullH = el.scrollHeight + 220;
 
             const bgColor = window.getComputedStyle(document.body).backgroundColor;
             const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -763,10 +764,11 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
                     // Operar sobre el CLON interno — nunca toca la página visible
                     const c = clonedDoc.querySelector('.bracket-container');
 
+                    // fullW ya incluye sidePad*2 — solo asignar directamente
                     c.style.overflow  = 'visible';
                     c.style.width     = fullW + 'px';
                     c.style.minWidth  = fullW + 'px';
-                    c.style.padding   = '110px 40px 60px';
+                    c.style.padding   = '110px ' + sidePad + 'px 60px';
                     c.style.position  = 'relative';
 
                     // Ocultar selects en Auto dentro del clon
