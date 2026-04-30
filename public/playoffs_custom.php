@@ -504,17 +504,20 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         .team-name {
             font-size: 9px;
             font-weight: 700;
-            flex: 1;
-            white-space: normal;
-            overflow: visible;
-            word-break: break-word;
+            flex: 1 1 0;
+            min-width: 0;          /* permite que flex recorte el nombre */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             line-height: 1.2;
             letter-spacing: -0.3px;
         }
 
         .score-input {
             width: 22px;
+            min-width: 22px;       /* evita colapso en mobile */
             height: 18px;
+            flex-shrink: 0;
             text-align: center;
             font-size: 12px;
             font-weight: bold;
@@ -531,7 +534,9 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
 
         .score-global {
             width: 26px;
+            min-width: 26px;       /* evita colapso en mobile */
             height: 18px;
+            flex-shrink: 0;
             text-align: center;
             font-size: 11px;
             font-weight: 800;
