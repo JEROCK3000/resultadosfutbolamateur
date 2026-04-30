@@ -102,6 +102,18 @@ $router->post('/resultados/guardar',               'ResultController@store');
 $router->post('/resultados/evento/guardar',        'ResultController@storeEvent');
 $router->post('/resultados/evento/eliminar/{id}',  'ResultController@destroyEvent');
 
+// ── Jugadores ──
+$router->get('/jugadores',                                          'PlayerController@index');
+$router->get('/jugadores/equipo/{team_id}/liga/{league_id}',        'PlayerController@roster');
+$router->get('/jugadores/crear/{team_id}/{league_id}',              'PlayerController@create');
+$router->post('/jugadores/guardar',                                 'PlayerController@store');
+$router->get('/jugadores/editar/{id}',                              'PlayerController@edit');
+$router->post('/jugadores/actualizar/{id}',                         'PlayerController@update');
+$router->post('/jugadores/eliminar/{id}',                           'PlayerController@destroy');
+$router->get('/jugadores/importar/{team_id}/{league_id}',           'PlayerController@importShow');
+$router->post('/jugadores/importar/{team_id}/{league_id}',          'PlayerController@importStore');
+$router->get('/jugadores/template/{team_id}/{league_id}',           'PlayerController@template');
+
 // ── Tabla de Posiciones ──
 $router->get('/posiciones',             'StandingsController@index');
 $router->get('/posiciones/{league_id}', 'StandingsController@show');

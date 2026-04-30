@@ -76,6 +76,11 @@ $flash = getFlash();
             <span class="nav-icon">🟨</span> Árbitros
           </a>
         </li>
+        <li class="nav-item">
+          <a href="<?= url('jugadores') ?>">
+            <span class="nav-icon">👤</span> Jugadores
+          </a>
+        </li>
       </ul>
 
       <div class="nav-section" style="margin-top:8px">
