@@ -7,7 +7,7 @@ class RegistrationModel extends Model
 {
     protected string $table = 'championship_registrations';
 
-    public function getAll(): array
+    public function getAll(string $orderBy = 'id', string $direction = 'ASC'): array
     {
         $stmt = $this->db->query("
             SELECT r.*, t.name AS team_name, l.name AS league_name,

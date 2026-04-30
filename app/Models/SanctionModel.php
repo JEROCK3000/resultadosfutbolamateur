@@ -25,7 +25,7 @@ class SanctionModel extends Model
         return $stmt->fetchAll();
     }
 
-    public function getAll(): array
+    public function getAll(string $orderBy = 'id', string $direction = 'ASC'): array
     {
         $stmt = $this->db->query("
             SELECT ps.*, p.name AS player_name, p.cedula,

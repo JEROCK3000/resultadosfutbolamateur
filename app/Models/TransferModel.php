@@ -72,7 +72,7 @@ class TransferModel extends Model
 
     /* ── Transferencias ───────────────────────────────────────── */
 
-    public function getAll(): array
+    public function getAll(string $orderBy = 'id', string $direction = 'ASC'): array
     {
         $stmt = $this->db->query("
             SELECT pt.*, p.name AS player_name, p.cedula,
