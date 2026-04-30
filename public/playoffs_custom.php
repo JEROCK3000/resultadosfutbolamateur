@@ -741,72 +741,52 @@ function renderMatchBox($nodeId, $title, $isFinal = false, $customClass = '')
         async function getCanvas() {
             const el = document.querySelector('.bracket-container');
 
-            // Guardar estilos originales
-            const orig = {
-                position:  el.style.position,
-                padding:   el.style.padding,
-                overflow:  el.style.overflow,
-                minWidth:  el.style.minWidth,
-                width:     el.style.width,
-            };
-            const origBodyOverflow  = document.body.style.overflow;
-            const origBodyMinWidth  = document.body.style.minWidth;
+            // Leer el ancho real del contenido (scrollWidth funciona aunque overflow esté en auto)
+            const fullW = el.scrollWidth;
+            const fullH = el.scrollHeight + 220; // espacio para el título
 
-            // Ocultar temporalmente los selects en Auto
-            const selects = el.querySelectorAll('select');
-            const origDisplays = [];
-            selects.forEach(s => {
-                origDisplays.push(s.style.display);
-                if (s.value === '') s.style.display = 'none';
-            });
-
-            // Expandir el contenedor Y el body para que html2canvas vea todo el ancho
-            el.style.position  = 'relative';
-            el.style.padding   = '100px 30px 60px 30px';
-            el.style.overflow  = 'visible';
-            el.style.minWidth  = 'max-content';
-            el.style.width     = 'max-content';
-            document.body.style.overflow  = 'visible';
-            document.body.style.minWidth  = (el.scrollWidth + 80) + 'px';
-
-            // Agregar título
-            const titleLayer = document.createElement('div');
-            titleLayer.style.cssText = 'position:absolute;top:15px;left:50%;transform:translateX(-50%);text-align:center;width:100%;z-index:5;pointer-events:none';
-            titleLayer.innerHTML = `
-                <h2 style="margin:0;font-family:'Arial',sans-serif;color:var(--text);font-size:24px;text-transform:uppercase;letter-spacing:2px;font-weight:800;">FASE FINAL CAMPEONATO 2026</h2>
-                <h3 style="margin:8px 0 0;font-family:'Arial',sans-serif;color:var(--title);font-size:15px;letter-spacing:1px;font-weight:600;">LIGA DEPORTIVA PARROQUIAL SAN FRANCISCO DE BORJA</h3>
-            `;
-            el.appendChild(titleLayer);
-
-            // Esperar reflow completo antes de capturar
-            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-            const captureWidth  = el.scrollWidth;
-            const captureHeight = el.scrollHeight;
             const bgColor = window.getComputedStyle(document.body).backgroundColor;
+            const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
+            const textColor  = isDark ? '#e6edf3' : '#333333';
+            const titleColor = isDark ? '#8b949e' : '#64748b';
 
             const canvas = await html2canvas(el, {
                 backgroundColor: bgColor,
-                scale:           4,
+                scale:           3,
                 useCORS:         true,
-                windowWidth:     captureWidth  + 80,
-                windowHeight:    captureHeight + 80,
-                width:           captureWidth,
-                height:          captureHeight,
+                logging:         false,
+                windowWidth:     fullW + 120,
+                windowHeight:    fullH + 120,
                 scrollX:         0,
-                scrollY:         -window.scrollY,
-            });
+                scrollY:         0,
+                onclone: (clonedDoc) => {
+                    // Operar sobre el CLON interno — nunca toca la página visible
+                    const c = clonedDoc.querySelector('.bracket-container');
 
-            // Restaurar todo
-            titleLayer.remove();
-            el.style.position  = orig.position;
-            el.style.padding   = orig.padding;
-            el.style.overflow  = orig.overflow;
-            el.style.minWidth  = orig.minWidth;
-            el.style.width     = orig.width;
-            document.body.style.overflow  = origBodyOverflow;
-            document.body.style.minWidth  = origBodyMinWidth;
-            selects.forEach((s, i) => { s.style.display = origDisplays[i]; });
+                    c.style.overflow  = 'visible';
+                    c.style.width     = fullW + 'px';
+                    c.style.minWidth  = fullW + 'px';
+                    c.style.padding   = '110px 40px 60px';
+                    c.style.position  = 'relative';
+
+                    // Ocultar selects en Auto dentro del clon
+                    c.querySelectorAll('select').forEach(s => {
+                        if (s.value === '') s.style.display = 'none';
+                    });
+
+                    // Agregar título centrado sobre el bracket
+                    const title = clonedDoc.createElement('div');
+                    title.style.cssText = [
+                        'position:absolute', 'top:10px', 'left:0', 'width:100%',
+                        'text-align:center', 'z-index:10', 'pointer-events:none'
+                    ].join(';');
+                    title.innerHTML = `
+                        <h2 style="margin:0;font-family:Arial,sans-serif;color:${textColor};font-size:26px;text-transform:uppercase;letter-spacing:2px;font-weight:800;">FASE FINAL CAMPEONATO 2026</h2>
+                        <h3 style="margin:6px 0 0;font-family:Arial,sans-serif;color:${titleColor};font-size:14px;letter-spacing:1px;font-weight:600;">LIGA DEPORTIVA PARROQUIAL SAN FRANCISCO DE BORJA</h3>
+                    `;
+                    c.appendChild(title);
+                }
+            });
 
             return canvas;
         }
